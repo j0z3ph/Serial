@@ -399,3 +399,4 @@ FodyWeavers.xsd
 .DS_Store
 C/test.exe
 .vscode/
+*.exe
