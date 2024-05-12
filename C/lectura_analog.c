@@ -22,7 +22,11 @@
 
 int main()
 {
+	#ifdef _WIN32
+	char *portName = "COM5";
+	#else
 	char *portName = "/dev/cu.usbserial-0001";
+	#endif
 	char command[MAX_DATA_LENGTH];
 	char response[MAX_DATA_LENGTH];
 	command[0] = '\n';
@@ -42,7 +46,7 @@ int main()
 		Sleep(1);
 		int tot = readSerialPort(response, MAX_DATA_LENGTH, &arduino);
 
-		//if(response[11] != '\n') continue;
+		if(tot != 12) continue;
 		
 		int x = atoi(response) - X_OFFSET;
 		int y = atoi(response+5) - Y_OFFSET;
@@ -74,7 +78,7 @@ int main()
 		//printf("%i - %i\n", tot, c);
 		//Sleep(1);
 		//printf("%c\n", response[10]);
-		if(response[9] == '-' && response[10] == '0') {
+		if(response[9] == '-' && response[10] == '0' && tot > 0) {
 			strcpy(command, "on\n");
 			writeSerialPort(command, strlen(command), &arduino);
 		} else {
