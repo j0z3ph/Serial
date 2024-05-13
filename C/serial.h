@@ -86,9 +86,10 @@ typedef struct Handler
 } SerialPort;
 #endif
 
-/// @brief Inicializa la conexión con el puerto serie.
-/// @param portName Nombre del puerto donde se conecta el arduino.
-/// @return Variable tipo SerialPort con la conexión establecida.
+/// @brief Abre una conexion serial con otro dispositivo.
+/// @param portName Nombre del puerto.
+/// @param br Baud rate o velocidad de conexion (debe ser el mismo que el otro dispositivo).
+/// @return Estructura que representa la conexion.
 SerialPort initSerialPort(const char *portName, BaudRate br);
 #ifdef _WIN32
 /// @brief Lee una cadena de texto por el puerto serie.
