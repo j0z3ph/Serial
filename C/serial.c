@@ -87,6 +87,26 @@ int readSerialPort(char *buffer, unsigned int buf_size, SerialPort *handler)
         while (ReadFile(handler->handler, &c, 1, NULL, NULL))
         {
             if (bytesRead >= buf_size)
+                break;
+            buffer[bytesRead++] = c;
+        }
+    }
+
+    return bytesRead;
+}
+
+int readSerialPortUntilEndLine(char *buffer, unsigned int buf_size, SerialPort *handler)
+{
+    char c;
+    unsigned int bytesRead = 0;
+    ClearCommError(handler->handler, &handler->errors, &handler->status);
+    memset((void *)buffer, 0, buf_size);
+
+    if (handler->status.cbInQue > 0)
+    {
+        while (ReadFile(handler->handler, &c, 1, NULL, NULL))
+        {
+            if (bytesRead >= buf_size)
             {
                 bytesRead--;
                 break;
@@ -186,6 +206,12 @@ int readSerialPort(char *buffer, unsigned int buf_size, SerialPort *handler)
 {
     int n = read(handler->handler, (void *)buffer, buf_size);
     buffer[n] = '\0';
+    return n;
+}
+
+int readSerialPortUntilEndLine(char *buffer, unsigned int buf_size, SerialPort *handler)
+{
+    int n = read(handler->handler, (void *)buffer, buf_size);
     return n;
 }
 

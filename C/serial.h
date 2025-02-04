@@ -92,19 +92,35 @@ typedef struct Handler
 /// @return Estructura que representa la conexion.
 SerialPort initSerialPort(const char *portName, BaudRate br);
 #ifdef _WIN32
-/// @brief Lee una cadena de texto por el puerto serie.
+/// @brief Lee bytes por el puerto serie.
+/// @param buffer Variable donde se escribirán los bytes leidos.
+/// @param buf_size Cantidad de bytes a leer.
+/// @param handler Puerto serie.
+/// @return Total de bytes leidos.
+int readSerialPort(char *buffer, unsigned int buf_size, SerialPort *handler);
+
+/// @brief Lee una cadena de texto por el puerto serie hasta encontrar
+/// un salto de linea o llegar al tamaño del buffer.
 /// @param buffer Variable donde se escribirá la cadena leida.
 /// @param buf_size Tamaño máximo de la cadena a leer.
 /// @param handler Puerto serie.
 /// @return Total de bytes leidos.
-int readSerialPort(char *buffer, unsigned int buf_size, SerialPort *handler);
+int readSerialPortUntilEndLine(char *buffer, unsigned int buf_size, SerialPort *handler);
 #else
-/// @brief Lee una cadena de texto por el puerto serie.
+/// @brief Lee bytes por el puerto serie.
+/// @param buffer Variable donde se escribirán los bytes leidos.
+/// @param buf_size Cantidad de bytes a leer.
+/// @param handler Puerto serie.
+/// @return Total de bytes leidos.
+int readSerialPort(char *buffer, unsigned int buf_size, SerialPort *handler);
+
+/// @brief Lee una cadena de texto por el puerto serie hasta encontrar
+/// un salto de linea o llegar al tamaño del buffer.
 /// @param buffer Variable donde se escribirá la cadena leida.
 /// @param buf_size Tamaño máximo de la cadena a leer.
 /// @param handler Puerto serie.
 /// @return Total de bytes leidos.
-int readSerialPort(char *buffer, unsigned int buf_size, SerialPort *handler);
+int readSerialPortUntilEndLine(char *buffer, unsigned int buf_size, SerialPort *handler);
 #endif
 /// @brief Escribe una cadena de texto en el puerto serie.
 /// @param buffer Cadena de texto a enviar.
