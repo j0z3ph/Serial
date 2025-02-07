@@ -33,18 +33,7 @@ SerialPort initSerialPort(const char *portName, BaudRate br)
                                   OPEN_EXISTING,
                                   0,
                                   NULL);
-    if (handler.handler == INVALID_HANDLE_VALUE)
-    {
-        if (GetLastError() == ERROR_FILE_NOT_FOUND)
-        {
-            printf("ERROR: Handle was not attached. Reason : %s not available\n", portName);
-        }
-        else
-        {
-            printf("ERROR!!!\n");
-        }
-    }
-    else
+    if (handler.handler != INVALID_HANDLE_VALUE)
     {
         DCB dcbSerialParameters = {0};
 
@@ -58,26 +47,24 @@ SerialPort initSerialPort(const char *portName, BaudRate br)
             dcbSerialParameters.ByteSize = 8;
             dcbSerialParameters.StopBits = ONESTOPBIT;
             dcbSerialParameters.Parity = NOPARITY;
-            dcbSerialParameters.fDtrControl = DTR_CONTROL_ENABLE;
 
             if (!SetCommState(handler.handler, &dcbSerialParameters))
             {
-                printf("ALERT: could not set serial port parameters\n");
+                printf("Could not set serial port parameters\n");
             }
             else
             {
                 handler.connected = true;
                 PurgeComm(handler.handler, PURGE_RXCLEAR | PURGE_TXCLEAR);
-                Sleep(ARDUINO_WAIT_TIME);
             }
         }
     }
     return handler;
 }
 
-int readSerialPort(char *buffer, unsigned int buf_size, SerialPort *handler)
+int readSerialPort(void *buffer, unsigned int buf_size, SerialPort *handler)
 {
-    char c;
+    unsigned char c;
     unsigned int bytesRead = 0;
     ClearCommError(handler->handler, &handler->errors, &handler->status);
     memset((void *)buffer, 0, buf_size);
@@ -86,9 +73,10 @@ int readSerialPort(char *buffer, unsigned int buf_size, SerialPort *handler)
     {
         while (ReadFile(handler->handler, &c, 1, NULL, NULL))
         {
+            memcpy(buffer + bytesRead, &c, sizeof(unsigned char));
+            bytesRead++;
             if (bytesRead >= buf_size)
                 break;
-            buffer[bytesRead++] = c;
         }
     }
 
@@ -123,7 +111,7 @@ int readSerialPortUntilEndLine(char *buffer, unsigned int buf_size, SerialPort *
     return bytesRead;
 }
 
-bool writeSerialPort(const char *buffer, unsigned int buf_size, SerialPort *handler)
+bool writeSerialPort(const void *buffer, unsigned int buf_size, SerialPort *handler)
 {
     DWORD bytesSend;
 
@@ -157,7 +145,8 @@ SerialPort initSerialPort(const char *portName, BaudRate br)
     SerialPort handler;
     handler.connected = false;
 
-    handler.handler = open(portName, O_RDWR | O_NOCTTY | O_SYNC);
+    // handler.handler = open(portName, O_RDWR | O_NOCTTY | O_SYNC);
+    handler.handler = open(portName, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (handler.handler < 0)
     {
         printf("Error %d opening %s: %s", errno, portName, strerror(errno));
@@ -173,51 +162,69 @@ SerialPort initSerialPort(const char *portName, BaudRate br)
         cfsetospeed(&tty, br);
         cfsetispeed(&tty, br);
 
-        tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8-bit chars
-        // disable IGNBRK for mismatched speed tests; otherwise receive break
-        // as \000 chars
-        // tty.c_iflag &= ~IGNBRK; // disable break processing
-        tty.c_lflag = ICANON; // no signaling chars, no echo,
-                              // no canonical processing
+        // tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8-bit chars
+        //  disable IGNBRK for mismatched speed tests; otherwise receive break
+        //  as \000 chars
+        //  tty.c_iflag &= ~IGNBRK; // disable break processing
+        // tty.c_lflag = ICANON; // no signaling chars, no echo,
+        //  no canonical processing
         // tty.c_oflag = 0;        // no remapping, no delays
-        tty.c_cc[VMIN] = MAX_DATA_LENGTH; // read block until get MAX_DATA_LENGTH or TIMEOUT
-        tty.c_cc[VTIME] = 5;              // 0.5 seconds read timeout
+        // tty.c_cc[VMIN] = MAX_DATA_LENGTH; // read block until get MAX_DATA_LENGTH or TIMEOUT
+        // tty.c_cc[VTIME] = 5;              // 0.5 seconds read timeout
 
-        tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
+        // tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
 
-        tty.c_cflag |= (CLOCAL | CREAD);   // ignore modem controls,
-                                           // enable reading
-        tty.c_cflag &= ~(PARENB | PARODD); // shut off parity
-        tty.c_cflag |= 0;
-        tty.c_cflag &= ~CSTOPB;
-        tty.c_cflag &= ~CRTSCTS;
+        // tty.c_cflag |= (CLOCAL | CREAD);   // ignore modem controls,
+        //  enable reading
+        // tty.c_cflag &= ~(PARENB | PARODD); // shut off parity
+        // tty.c_cflag |= 0;
+        // tty.c_cflag &= ~CSTOPB;
+        // tty.c_cflag &= ~CRTSCTS;
+
+        tty.c_iflag = IGNBRK | IGNPAR;
+        tty.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 
         if (tcsetattr(handler.handler, TCSANOW, &tty) != 0)
         {
             printf("Error %d from tcsetattr", errno);
         }
         handler.connected = true;
+        // tcflush(handler.handler, TCIFLUSH);
     }
 
     return handler;
 }
 
-int readSerialPort(char *buffer, unsigned int buf_size, SerialPort *handler)
+int readSerialPort(void *buffer, unsigned int buf_size, SerialPort *handler)
 {
     int n = read(handler->handler, (void *)buffer, buf_size);
-    buffer[n] = '\0';
     return n;
 }
 
 int readSerialPortUntilEndLine(char *buffer, unsigned int buf_size, SerialPort *handler)
 {
-    int n = read(handler->handler, (void *)buffer, buf_size);
+    char c;
+    unsigned int n = 0;
+    while (read(handler->handler, &c, 1))
+    {
+        if (n >= buf_size)
+        {
+            n--;
+            break;
+        }
+        buffer[n++] = c;
+        if (c == '\n')
+        {
+            break;
+        }
+    }
+    buffer[n] = '\0';
     return n;
 }
 
-bool writeSerialPort(const char *buffer, unsigned int buf_size, SerialPort *handler)
+bool writeSerialPort(const void *buffer, unsigned int buf_size, SerialPort *handler)
 {
-    write(handler->handler, buffer, buf_size);
+    size_t n = write(handler->handler, buffer, buf_size);
     return true;
 }
 

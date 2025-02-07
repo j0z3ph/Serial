@@ -44,7 +44,7 @@ int main()
 		//strcpy(command, "\n");
 		//writeSerialPort(command, strlen(command), &arduino);
 		Sleep(1);
-		int tot = readSerialPort(response, MAX_DATA_LENGTH, &arduino);
+		int tot = readSerialPortUntilEndLine(response, MAX_DATA_LENGTH, &arduino);
 
 		if(tot != 12) continue;
 		

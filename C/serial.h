@@ -23,7 +23,6 @@
 #ifndef __SERIAL_ARDUINO_H__
 #define __SERIAL_ARDUINO_H__ 1
 
-#define ARDUINO_WAIT_TIME 2000
 #define MAX_DATA_LENGTH 255
 
 typedef enum BaudRate
@@ -97,7 +96,7 @@ SerialPort initSerialPort(const char *portName, BaudRate br);
 /// @param buf_size Cantidad de bytes a leer.
 /// @param handler Puerto serie.
 /// @return Total de bytes leidos.
-int readSerialPort(char *buffer, unsigned int buf_size, SerialPort *handler);
+int readSerialPort(void *buffer, unsigned int buf_size, SerialPort *handler);
 
 /// @brief Lee una cadena de texto por el puerto serie hasta encontrar
 /// un salto de linea o llegar al tamaño del buffer.
@@ -112,7 +111,7 @@ int readSerialPortUntilEndLine(char *buffer, unsigned int buf_size, SerialPort *
 /// @param buf_size Cantidad de bytes a leer.
 /// @param handler Puerto serie.
 /// @return Total de bytes leidos.
-int readSerialPort(char *buffer, unsigned int buf_size, SerialPort *handler);
+int readSerialPort(void *buffer, unsigned int buf_size, SerialPort *handler);
 
 /// @brief Lee una cadena de texto por el puerto serie hasta encontrar
 /// un salto de linea o llegar al tamaño del buffer.
@@ -127,7 +126,7 @@ int readSerialPortUntilEndLine(char *buffer, unsigned int buf_size, SerialPort *
 /// @param buf_size Tamaño de la cadena.
 /// @param handler Puerto serie.
 /// @return \c true si  la cadena se envió. \c false en caso de error.
-bool writeSerialPort(const char *buffer, unsigned int buf_size, SerialPort *handler);
+bool writeSerialPort(const void *buffer, unsigned int buf_size, SerialPort *handler);
 /// @brief Permite saber si un puerto serie esta conectado.
 /// @param handler Puerto serie.
 /// @return \c true si esta conectado. \c false si no hay conexión.
